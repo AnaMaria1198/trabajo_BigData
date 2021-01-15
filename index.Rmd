@@ -1,0 +1,398 @@
+---
+title: "Energias Renovables"
+subtitle: "Ana María Borras Cebolla (aboce@alumni.uv.es)"
+author: "Universitat de València"
+date: "7 de Enero de 2021"
+output:
+  html_document:
+    theme: paper
+    highlight: textmate 
+    toc: true
+    toc_depth: 3 
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+    self_contained: true
+    number_sections: false
+    df_print: kable
+    code_download: true
+editor_options: 
+  chunk_output_type: console
+---
+
+<FONT COLOR="Purple">Proyecto realizado para la asignatura''Programación y manejo de datos en la era del Big Data" impartida por el profesor Pedro J. Pérez en el Grado de Economía de la Universidad de Valencia. La página web de la asignatura se puede ver [aquí]( https://perezp44.github.io/intro-ds-20-21-web) . Los trabajos elaborados por nuestros compañeros de curso pueden verse [aquí](https://perezp44.github.io/intro-ds-20-21-web/07-trabajos.html)</FONT>
+
+```{r packages-setup, include = FALSE}
+library(tidyverse)
+library(klippy)  #- remotes::install_github("rlesur/klippy")
+library(knitr)
+library(cowplot)
+library(xml2)
+library(magick)
+library(maps)
+library(gganimate)
+library(kableExtra)
+library(leaflet) #install.packages("leaflet")
+```
+
+```{r chunk-setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, 
+                      #results = "hold",
+                      cache = FALSE, cache.path = "/caches/", comment = "#>",
+                      #fig.width = 7, #fig.height= 7,   
+                      #out.width = 7, out.height = 7,
+                      collapse = TRUE,  fig.show = "hold",
+                      fig.asp = 7/9, out.width = "60%", fig.align = "center")
+#- para mejorar los gráficos, bueno en realidad para que se vean igual en distintos SO
+#- https://www.jumpingrivers.com/blog/r-knitr-markdown-png-pdf-graphics/
+knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
+```
+
+```{r options-setup, include = FALSE}
+options(scipen = 999) #- para quitar la notación científica
+options("yaml.eval.expr" = TRUE) #- https://github.com/viking/r-yaml/issues/47  (lo puse x el pb con el warning) En realidad creo que mejor sería ponerlo en RProfile
+```
+
+
+```{r klippy, echo = FALSE}
+klippy::klippy(position = c("top", "right")) #- remotes::install_github("rlesur/klippy")
+```
+
+-----------------
+ 
+
+##  <FONT COLOR="Blue"> 1. Introducción </FONT>
+
+Las energías renovables son aquellas que se obtienen de fuentes naturales inagotables a escala humana, bien porque el recurso dispone de una cantidad de energía inmensa, bien porque el recurso tiene la capacidad de regenerarse de manera natural.
+
+Existen diferentes fuentes de energía renovable:
+> - según los recursos naturales utilizados para la generación de energía: eólica, hidraulica, térmica, solar, ...
+> - en función de la energía final conseguida a partir de ellas: energía eléctrica, energía térmica y biocarburantes.
+
+La utilización de energías renovables es muy antigua. Los molinos y la navegación a vela son dos ejemplos claros de este uso. En la actualidad, las energías renovables constituyen fuentes de abastecimiento energético autóctonas y respetuosas con el medio ambiente.
+
+Es por ello que el objetivo de este trabajo es analizar la situación de las energias renovables en España.
+
+```{r}
+knitr::include_graphics("https://www.energias-renovables.com/ficheroenergias/fotos/panorama/ampliada/s/schneider-electric-tendencias-9-3-2020.jpg")
+
+```
+
+
+##  <FONT COLOR="Blue"> 2. Datos para la realización del proyecto </FONT> {.tabset}
+
+### Origen: **Github**
+
+Estos datos han sido faciles de obtener, ya que los he copiado directamente en GitHub. Són datos reales de páginas oficiales de estadística. Los he colocado yo en vez de descargarlos porque no me daba la opción.
+
+Los datos utilizados para la elaboración del presente proyecto son extraidos , principalmente de la base de datos de la  página oficial del **Instituto Nacional de Estadística** (*INE*) , que puede verse [aquí](https://www.ine.es/dyngs/INEbase/listaoperaciones.htm) y de otras páginas oficiales como estadística.com o REE (Red Eléctrica de España) como podemos ver respectivamente [aquí](https://www.es.estadistica.com) y  [aquí](https://www.ree.es/es/datos/publicaciones/informe-de-energias-renovables/informe-2019)
+
+
+### Carga de datos
+```{r}
+#Los paquetes que he utilizado para realizar el trabajo son:
+library(rio)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(patchwork)
+library(maps)
+library(gganimate)
+
+#Importo los datos
+
+#Consumo participacion #barres
+url <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/consumo.csv"
+aa<- rio::import(url, setclass="tibble")
+
+#Dependencia energética
+url1 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/dependecia.csv"
+bb<- rio::import(url1, setclass="tibble")
+
+#Energias Mundo
+url2 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/energias.csv"
+cc<- rio::import(url2, setclass="tibble")
+
+#Energias España
+url3 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/energiasES.csv"
+dd<- rio::import(url3, setclass="tibble")
+
+#Empleo
+url4 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/empleo.csv"
+ee<- rio::import(url4, setclass="tibble")
+
+```
+
+
+## <FONT COLOR="Blue"> 3. Energía renovable en el mundo   </FONT> {.tabset}
+
+### **Mundo**
+
+El crecimiento a nivel mundial del consumo de energía primaria procedente de fuentes renovables fue del 7,1%, en el año 2018. 
+
+Las energías renovables aumentaron su contribución al consumo de energía primaria en un 0,4%, situándose en el 10,8% del total. 
+
+Al igual que en los últimos años, las energías renovables siguen siendo la cuarta fuente en consumo de energía primaria en el mundo. 
+
+El consumo mundial de petróleo disminuyó en 0,5 puntos porcentuales hasta situarse en el 33,6% y, a pesar de la reducción mantuvo la primera posición. 
+
+Tras esta primera fuente energética se posicionó el carbón, que también disminuyó en términos porcentuales pasando del 27,6% hasta el 27,2%. El gas natural, en cambio, aumentó a nivel global su cuota de participación en la energía primaria. Con un aumento de 0,5 puntos porcentuales, representó el 23,9% de la energía.
+
+En conjunto, el uso de combustibles fósiles representa el 84,7% del total de energía primaria consumida a nivel mundial. Finalmente, la energía nuclear representó el 4,4% del consumo de energía primaria en el mundo, lo que supone un estancamiento de su cuota de energía. En 2018, el consumo global de energía en el mundo creció un 2,9%.
+
+
+```{r, echo=FALSE}
+knitr::include_graphics("https://previews.123rf.com/images/yevgenijd/yevgenijd1708/yevgenijd170800004/83237780-logo-de-la-ecolog%C3%ADa-s%C3%ADmbolo-del-mundo-ecol%C3%B3gico-icono-concepto-ecol%C3%B3gico-para-el-logo-de-la-empresa-vector.jpg")
+
+```
+
+### Gráfico
+
+```{r, echo=FALSE}
+url2 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/energias.csv"
+cc<- rio::import(url2, setclass="tibble")
+
+p2 <- cc %>% ggplot(aes(x = Tipe,y = Consumo,fill = Tipe)) +
+               geom_bar(stat = "identity", color = "black") +
+    facet_wrap(vars(Tipe),nrow = 5, ncol = 5) +
+               scale_fill_brewer(palette = "Spectral", direction = -1) +
+               labs(fill="Países",
+               x=NULL,
+               y="% sobre el total de energia",
+               title="Energia",
+               caption="Fuente: APPA Renovable") +
+               theme( plot.background = element_rect( fill = "#e8d7a3"),
+              panel.background = element_rect( fill = "cornsilk2", colour = "lavenderblush", size = 0.1 ),
+              panel.grid  = element_line( colour ="grey"),
+              axis.ticks = element_blank(),
+              axis.text.x = element_blank(),
+              plot.title = element_text(hjust = 0.5),
+              panel.border = element_rect(fill = NA,colour = "black"),
+              legend.background = element_rect( fill = "cornsilk2", colour = "black" ),
+              plot.margin = margin(t = 5, r = 25, b = 5,15),
+              strip.background = element_rect(fill = "#e8d7a3",colour = NULL))
+
+p2
+
+```
+
+```{r eval = TRUE, echo = FALSE,  out.width="80%"}
+
+p <- leaflet() %>%
+  addTiles() %>% 
+  setView(lng = -2.435973, lat = 52.378051, zoom = 1) %>%
+  addMarkers(lng = 2.258063, lat = 41.569469, popup = "GP ESPAÑA")
+p
+
+```
+
+
+## <FONT COLOR="Blue"> 4. Energías renovables en España</FONT>
+
+
+Las cifras se basan en la generación bruta de energía a partir de fuentes renovables, incluyendo la eólica, geotérmica, solar, biomasa y el aprovechamiento energético de residuos, sin tener en cuenta el suministro transfronterizo de electricidad.
+
+ Esta estadística muestra la evolución anual del porcentaje de energía procedente de fuentes renovables sobre el consumo bruto final de energía en España de 2004 a 2018. En el año 2018, en torno al 17,5% del consumo bruto final de energía en España correspondió a fuentes de energía renovables.
+
+```{r, echo=FALSE}
+#Participación energias renovables
+url <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/consumo.csv"
+aa<- rio::import(url, setclass="tibble")
+
+#Gráfico
+p <- ggplot(aa, aes(x=Date, y=Consumo, color= Date))  + geom_point( ) + geom_line() +
+  labs(title = "España 2004-2018" , subtitle="Participación energias renovables en el consumo de energia total", x="Date", y="Consumo(%)", source = "APPA Renovables")
+p
+```
+
+### <FONT COLOR="Blue"> 4.1 Tipologia Energias Renovables </FONT>
+
+Las energías renovables tienen una distribución desigual en España.
+En lo referente al sector eléctrico, nuestro país ha sido un referente en integración de renovables en el sistema eléctrico. Por ello, a pesar del parón de los últimos años, más del 37% de nuestra electricidad fue renovable en 2018. 
+
+En el año 2018 las energías renovables han aumentado su participación en el consumo de energía primaria. Las causas de este aumento fueron la recuperación de la generación hidráulica tras la sequía de 2017, la nueva potencia impulsada por las subastas y la competitividad alcanzada por algunas tecnologías.
+
+En España la energía renovable aumentó un 8,2% en 2018 hasta representar el 13,9% del total de energía primaria, lo que las posiciona en tercer lugar, por detrás de los productos petrolíferos (44,9%) y del gas natural (21,1%). Por debajo de las renovables se situaron la nuclear con un 11,3% de participación y el carbón con un 8,6%
+
+```{r, echo=FALSE}
+
+#Descargo datos
+url3 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/energiasES.csv"
+dd<- rio::import(url3, setclass="tibble")
+
+#Gráfico barras tipo energias renovables España
+p3 <- ggplot(dd,aes(Tipe,Consumo,color = Tipe,fill= Tipe)) +
+  geom_bar(position = "stack",  width =.18,stat="identity") +
+  coord_flip()+
+  geom_text(aes(label= Consumo ,hjust=-.03,  colour="black"),size=3.2)+
+
+  theme(axis.line = element_line(color = "orange",size=1))+
+      theme(panel.background=element_blank())+
+      scale_x_discrete() +
+    xlab(NULL)+ylab(NULL)+
+  theme(legend.position = "none",
+                     axis.text = element_text(size = 8,face="bold"),
+        plot.title = element_text(size=14,face = "bold")) +
+  ggtitle("Consumo nacional de energias renovables en España en 2016 " ,subtitle = "En miles de toneladas equivalentes de petróleo")
+p3
+```
+
+
+
+### <FONT COLOR="Blue"> 4.2 EFECTOS POSITIVOS del uso de Energias Renovables </FONT>
+
+>- Contribución al consumo 
+
+En relación con la energía final su consumo en España aumentó un 3,4% en relación al año 2017. En 2018 las energías renovables representaron el 15,1% del consumo total de energía final. 
+
+Este valor aumenta respecto a 2017, cuando se alcanzó el 13,9%, debido al aumento de la participación renovable, fundamentalmente por la recuperación de la generación hidráulica para generación eléctrica y haber experimentado un año con buen recurso eólico. 
+
+Las tecnologías renovables térmicas aumentaron débilmente su contribución, aumentando su participación un 0,3%, representando un 6,7% del total.
+
+La energía final bruta procedente de energía renovable en 2018 fue del 17,3%1, este valor es una medida de referencia para el cumplimiento del objetivo del 20% a 2020. 
+
+El descenso fue debido a un aumento de la demanda y una reducción de la producción solar, a pesar de la mayor producción hidráulica y eólica o el repunte experimentado por los sectores térmicos.
+
+
+
+```{r,echo = FALSE}
+el_url <- "https://raw.githubusercontent.com/xi765/TrabajoGrupo/main/empleo_tur.csv"
+
+empleo <- rio::import(el_url)
+
+#Gráfico
+
+```
+
+>- Disminución dependencia energética
+
+España siempre se ha caracterizado por su altísima dependencia energética de los combustibles fósiles, la cual registró su máximo histórico en 2008, cuando llegó a alcanzar el 81,3%. Gracias a la generación con energías renovables, la dependencia fue disminuyendo año tras año hasta los años 2012 y 2013, cuando la dependencia se redujo al 70,2%. 
+
+Debido a la moratoria renovable esta disminución se interrumpió, manteniéndose en el entorno del 73% los años siguientes, a excepción de 2016. En 2017, debido a la fuerte sequía, la dependencia se disparó hasta el 73,9%, cifra que se ha moderado en 2018, año en el que la dependencia energética se situó en el 73,4%. 
+
+Por consiguiente, sin tener en cuenta la energía nuclear, la cual se considera autóctona, aunque no sea nacional el origen del material empleado como combustible, nuestro país se sitúa cerca de veinte puntos porcentuales por encima de la media de los 28 países de la Unión Europea, cuya dependencia alcanzó el 55,1% en 2017. 
+
+Las energías renovables, al ser fuentes de energía limpias, autóctonas e inagotables, resultan una herramienta fundamental y necesaria para solucionar este grave problema de dependencia energética, que viene afectando a nuestro país desde hace tanto tiempo.
+
+```{r, echo=FALSE}
+#Gráfico de lineas
+
+url1 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/dependecia.csv"
+bb<- rio::import(url1, setclass="tibble")
+
+#Arreglar datos
+bb <- bb %>% mutate( Country = stringr::str_replace_all(Country , pattern = "[±]" , replacement = "y" ))
+bb <- bb %>% mutate( Country = stringr::str_replace_all(Country , pattern = "[Ã]" , replacement = "n" ))
+
+#Gráfico
+p1 <- ggplot(bb, aes(x= Date, y= Dependencia , group=Country, color=Country)) + geom_line() + facet_grid(Country ~ .) +
+  expand_limits(y=2) + theme(legend.position = "none") + labs(title = " Dependencia energética 2011-2018 ",  caption = "Source:APPA Renovables",
+              x = "Fecha ",
+              y = NULL,
+              color = "Continente",
+              subtitle = "En porcentages")
+
+plotly::ggplotly(p1)
+
+```
+
+
+
+### <FONT COLOR="Blue"> 4.3 Empleo </FONT> 
+
+Con un incremento del 3,3% respecto al año anterior, el Sector Renovable registró un total de 81.294 empleos en términos globales en 2018. La creación de empleo de forma neta respecto a 2017 fue, por tanto, de 2.627 nuevos puestos de trabajo.
+
+A pesar del continuo crecimiento de la creación de nuevos puestos de trabajo en el Sector, aún se sitúa lejos de alcanzar las mayores tasas de empleo que vivimos en el año 2008, llegando a una cifra cercana a 145.000 empleos directos e indirectos.
+
+Las tecnologías que crearon nuevos puestos de trabajo netos en 2018 fueron la eólica (1.961), la solar fotovoltaica (966), los biocarburantes (158), la minihidráulica (53), la geotermia de baja entalpía (13), la marina (11) la solar térmica (9), la minieólica (3) y la geotermia de alta entalpía (3). Por el contrario, destruyeron empleo solamente la biomasa (-507) y la solar termoeléctrica (-43).
+
+
+```{r, echo=FALSE}
+
+#Cargo datos
+url4 <- "https://raw.githubusercontent.com/AnaMaria1198/trabajo_BigData/main/empleo.csv"
+ee<- rio::import(url4, setclass="tibble")
+
+#Tabla
+kable(ee) %>%
+  kableExtra::kable_styling(fixed_thead = list(enabled = T, background = "lightblue")) %>%
+  kable_paper(full_width = F) %>% row_spec(10, bold = T, color = "red") %>% row_spec(11, bold = T, color = "red") %>%
+  column_spec(2, color = "black",
+              link = "https://www.tudn.com/futbol/premier-league/jurgen-klopp-y-kevin-de-bruyne-son-el-mejor-tecnico-y-jugador-de-la-premier-league")
+
+
+```
+
+
+## <FONT COLOR="Blue"> 5. Medio ambiente </FONT> 
+
+Algunos de los beneficios de las energías renovables se producen al sustituir energías fósiles y contaminantes con energías limpias. Estos beneficios, como el impacto positivo en la balanza comercial y el ahorro en derechos de emisión, son económicamente cuantificables. 
+
+Gracias al impacto en la generación eléctrica, energía térmica y los biocarburantes, el Sector de las Energías Renovables evitó en 2018 la importación de 20.732.240 toneladas equivalentes de petróleo (tep) de combustibles fósiles, que generó un ahorro económico equivalente de 8.547 millones de euros. 
+
+El aumento del ahorro (+22%) se debe a dos razones: una mayor sustitución de toneladas de combustible fósil sustituidas y un aumento del coste de las materias primas de origen fósil.
+
+Las tecnologías renovables también evitaron que se emitieran a la atmósfera 56.659.226 toneladas de CO2, lo que permitió ahorrar pagos en concepto de derechos de emisión por valor de 899 millones de euros. El ahorro económico ha aumentado en un 171%, fruto del fuerte incremento del 168% del precio medio de los derechos de emisión por tonelada de CO2 evitada.
+
+
+```{r, echo=FALSE}
+knitr::include_graphics("https://www.meteorologiaenred.com/wp-content/uploads/2017/09/deshielo.jpg.webp")
+
+```
+
+
+## <FONT COLOR="Blue"> 6. En tiempos de COVID-19</FONT>
+
+Con la nueva situación sanitaria las personas estan más atentas a su salud y a su **entorno**. Esto hace que sean más conscientes de los recursos que tenemos.
+
+Hemos podido comprobar que el medioambiente no solo tiene cosas positivas como fuentes de energias naturales sinò tambien negativas como l'aparición de virus o animales letales. Este ambiente se ve afectado si no se cuida.
+
+También delante de una situación así vemos afectada significativamente nuestra economia ya que energeticamente dependemos mucho del exterior. De hecho, España figura  entre los países más golpeados por la pandemia.
+
+Por lo que incentiva a invertir y priorizar otro tipo de energías procedentes de recursos naturales para llegar a disminuir esta dependencia y mejorar nuestro país.
+
+
+```{r}
+knitr::include_graphics("https://static3.abc.es/media/economia/2020/04/20/energia-renovable-kjcB--620x349@abc.jpg")
+
+```
+
+
+
+## <FONT COLOR="Blue"> 7. Conclusiones</FONT>
+
+Con este trabajo he podido analizar la importancia de las energias renovables en España, tanto dentro de esta, analizando los tipos de energias que más se utilizan, como en el exterior viendo la posición de las energias renovables respecto a la resta de energias a nivel global. 
+
+Por otra parte he visto que en los últimos años tanto la inversión como el consumo de energias renovables han aumentado considerablemente en la economia española.
+
+Pero no solo eso,también he visto como ha pesar de ser un sector en crecimiento, este crecimiento se ha reducido debido a la llegada de la nueva situación sanitaria.
+
+Así que creo que es importante seguir invirtiendo en este tipo de energias y buscar nuevas formas de consumo de energias renovables que nos permitan reducir el uso del resto de energias.
+
+
+## <FONT COLOR="Blue"> 8. Bibliografia </FONT>
+
+>- Página oficial del Instituto Nacional de Estadística. [aquí](https://www.ine.es/dyngs/INEbase/listaoperaciones.htm)
+
+>- Página de analisis estadísticos [aquí](https://es.statista.com/temas/6675/las-energias-renovables-en-espana/#:~:text=%20Las%20energ%C3%ADas%20renovables%20en%20Espa%C3%B1a%20-%20Datos,Energ%C3%ADa%20solar%20fotovoltaica%206%20Energ%C3%ADa%20hidr%C3%A1ulica%20More%20)
+
+>- Red Eléctrica de España (**REE**) [aquí](https://www.ree.es/es/datos/publicaciones/informe-de-energias-renovables/informe-2019)
+
+
+>- APPA Renovables[aquí](https://www.appa.es/energias-renovables/renovables-en-espana/#:~:text=En%20Espa%C3%B1a%20la%20energ%C3%ADa%20renovable,natural%20(21%2C1%25).)
+
+ 
+
+
+
+
+
+----------------
+
+<br><br>
+
+Para acabar este chunk para incluir tu `session info`:
+
+```{r}
+sessioninfo::session_info() %>% details::details(summary = 'current session info') 
+```
