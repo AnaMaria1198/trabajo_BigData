@@ -12,4 +12,4 @@ archivo `Informe.Rmd` del repo. La versión final del trabajo puede
 visualizarse en:
 <a href="https://AnaMaria1198.github.io/trabajo_BigData/" class="uri">https://AnaMaria1198.github.io/trabajo_BigData/</a>.
 
-El trabajo trata de /consiste en ….
+El trabajo trata de /consiste en el estudio de las Energias Renovables.
